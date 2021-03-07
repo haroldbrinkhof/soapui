@@ -9,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.eviware.soapui.impl.wsdl.CompositingUtils.pathProofName;
 
@@ -67,7 +69,24 @@ public class Compositor {
                 try(DirectoryStream<Path> testCases = Files.newDirectoryStream(testCasesDir,"*.xml")){
                     List<TestCaseConfig> testCaseConfigList = new ArrayList<>();
                     for(Path caseFile: testCases) {
-                        testCaseConfigList.add(TestCaseConfig.Factory.parse(caseFile.toFile()));
+                        TestCaseConfig testCaseConfig = TestCaseConfig.Factory.parse(caseFile.toFile());
+                        List<TestStepConfig> testStepsHolder = new ArrayList<>();
+                        Path testStepsDir = Paths.get(caseFile.toFile().getParent(),caseFile.getFileName().toString().replace(".xml","_steps"));
+
+                        if(testStepsDir.toFile().exists() && testStepsDir.toFile().isDirectory()){
+                            try(DirectoryStream<Path> testSteps = Files.newDirectoryStream(testStepsDir,"*.xml")){
+                                for(Path testStep: testSteps) {
+                                    int place = Integer.parseInt(testStep.getFileName().toString().split("_")[1]);
+                                    if(place < testStepsHolder.size()) {
+                                        testStepsHolder.set(place, TestStepConfig.Factory.parse(testStep.toFile()));
+                                    } else {
+                                        testStepsHolder.add(TestStepConfig.Factory.parse(testStep.toFile()));
+                                    }
+                                }
+                            }
+                        }
+                        testCaseConfig.setTestStepArray(testStepsHolder.toArray(new TestStepConfig[0]));
+                        testCaseConfigList.add(testCaseConfig);
                     }
                     if(!testCaseConfigList.isEmpty()){
                         config.setTestCaseArray(testCaseConfigList.toArray(new TestCaseConfig[0]));

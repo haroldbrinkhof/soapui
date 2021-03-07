@@ -71,6 +71,51 @@ public class Decompositor {
                 Paths.get(testSuites.toFile().getAbsolutePath(),name + "_testCases").toFile().mkdir();
             }
             for (TestCaseConfig testCaseConfig: testSuiteConfig.getTestCaseList()){
+                if(!testCaseConfig.getTestStepList().isEmpty()) {
+                    Paths.get(testSuites.toFile().getAbsolutePath(), name + "_testCases", pathProofName(testCaseConfig.getName()) + "_steps").toFile().mkdir();
+                    for(int x = 0; x < testCaseConfig.getTestStepList().size(); x++) {
+                        File step = Paths.get(testSuites.toFile().getAbsolutePath(), name + "_testCases",
+                                pathProofName(testCaseConfig.getName()) + "_steps",
+                                "step_" + x + "_" + pathProofName(testCaseConfig.getTestStepArray(x).getName()) + ".xml")
+                                .toFile();
+                        testCaseConfig.getTestStepArray(x).save(step);
+                    }
+                }
+                /*
+                TestCaseConfig testCase = TestCaseConfig.Factory.newInstance();
+                testCase.setAmfAuthorisation(testCaseConfig.getAmfAuthorisation());
+                testCase.setAmfEndpoint(testCaseConfig.getAmfEndpoint());
+                testCase.setDisabled(testCaseConfig.getDisabled());
+                testCase.setAmfLogin(testCaseConfig.getAmfLogin());
+                testCase.setAmfPassword(testCaseConfig.getAmfPassword());
+                testCase.setBreakPointsArray(testCaseConfig.getBreakPointsList().toArray(new BreakPointConfig[0]));
+                testCase.setDiscardOkResults(testCaseConfig.getDiscardOkResults());
+                testCase.setFailOnError(testCaseConfig.getFailOnError());
+                testCase.setFailTestCaseOnErrors(testCaseConfig.getFailTestCaseOnErrors());
+                testCase.setKeepSession(testCaseConfig.getKeepSession());
+                testCase.setMaxResults(testCaseConfig.getMaxResults());
+                testCase.setProperties(testCaseConfig.getProperties());
+                testCase.setLoadTestArray(testCaseConfig.getLoadTestList().toArray(new LoadTestConfig[0]));
+                testCase.setReportParameters(testCaseConfig.getReportParameters());
+                testCase.setReportScript(testCaseConfig.getReportScript());
+                testCase.setReportTemplatesArray(testCaseConfig.getReportTemplatesList().toArray(new ReportTemplateConfig[0]));
+                testCase.setRequirements(testCaseConfig.getRequirements());
+                testCase.setSearchProperties(testCaseConfig.getSearchProperties());
+                testCase.setSecurityTestArray(testCaseConfig.getSecurityTestList().toArray(new SecurityTestConfig[0]));
+                testCase.setSetupScript(testCaseConfig.getSetupScript());
+                testCase.setTearDownScript(testCaseConfig.getTearDownScript());
+                testCase.setTimeout(testCaseConfig.getTimeout());
+                testCase.setWsrmAckTo(testCaseConfig.getWsrmAckTo());
+                testCase.setWsrmEnabled(testCaseConfig.getWsrmEnabled());
+                testCase.setWsrmExpires(testCaseConfig.getWsrmExpires());
+                testCase.setWsrmVersion(testCaseConfig.getWsrmVersion());
+                testCase.setDescription(testCaseConfig.getDescription());
+                testCase.setId(testCaseConfig.getId());
+                testCase.setName(testCaseConfig.getName());
+                testCase.setSettings(testCaseConfig.getSettings());
+                testCase.setTimestamp(testCaseConfig.getTimestamp());
+                */
+                testCaseConfig.setTestStepArray(null);
                 testCaseConfig.save(Paths.get(testSuites.toFile().getAbsolutePath(), name +  "_testCases", pathProofName(testCaseConfig.getName()) + ".xml" ).toFile());
             }
             testSuiteConfig.setTestCaseArray(null);

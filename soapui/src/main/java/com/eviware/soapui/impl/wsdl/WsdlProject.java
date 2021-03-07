@@ -18,18 +18,7 @@ package com.eviware.soapui.impl.wsdl;
 
 import com.eviware.soapui.SoapUI;
 import com.eviware.soapui.autoupdate.SoapUIVersionInfo;
-import com.eviware.soapui.config.InterfaceConfig;
-import com.eviware.soapui.config.MockServiceConfig;
-import com.eviware.soapui.config.MockServiceDocumentConfig;
-import com.eviware.soapui.config.ProjectConfig;
-import com.eviware.soapui.config.RESTMockServiceConfig;
-import com.eviware.soapui.config.SecurityTestConfig;
-import com.eviware.soapui.config.SoapuiProjectDocumentConfig;
-import com.eviware.soapui.config.TestCaseConfig;
-import com.eviware.soapui.config.TestStepSecurityTestConfig;
-import com.eviware.soapui.config.TestSuiteConfig;
-import com.eviware.soapui.config.TestSuiteDocumentConfig;
-import com.eviware.soapui.config.TestSuiteRunTypesConfig;
+import com.eviware.soapui.config.*;
 import com.eviware.soapui.config.TestSuiteRunTypesConfig.Enum;
 import com.eviware.soapui.impl.WorkspaceImpl;
 import com.eviware.soapui.impl.WsdlInterfaceFactory;
@@ -48,6 +37,7 @@ import com.eviware.soapui.impl.wsdl.support.PathUtils;
 import com.eviware.soapui.impl.wsdl.support.wsdl.UrlWsdlLoader;
 import com.eviware.soapui.impl.wsdl.support.wsdl.WsdlLoader;
 import com.eviware.soapui.impl.wsdl.support.wss.DefaultWssContainer;
+import com.eviware.soapui.impl.wsdl.support.wss.WssContainer;
 import com.eviware.soapui.impl.wsdl.testcase.WsdlProjectRunner;
 import com.eviware.soapui.impl.wsdl.teststeps.WsdlTestStep;
 import com.eviware.soapui.model.ModelItem;
@@ -109,6 +99,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -307,49 +301,53 @@ public class WsdlProject extends AbstractTestPropertyHolderWsdlModelItem<Project
     }
 
     public void loadProject(URL file) throws SoapUIException {
-        try {
-            UISupport.setHourglassCursor();
+            try {
+                UISupport.setHourglassCursor();
 
-            UrlWsdlLoader loader = new UrlWsdlLoader(file.toString(), this);
-            loader.setUseWorker(false);
-            InputStream inputStream = loader.load();
-            loadProjectFromInputStream(inputStream);
-            log.info("Loaded project from [" + file.toString() + "]");
-        } catch (Exception e) {
-            if (e instanceof XmlException) {
-                XmlException xe = (XmlException) e;
-                XmlError error = xe.getError();
-                if (error != null) {
-                    System.err.println("Error at line " + error.getLine() + ", column " + error.getColumn());
+                File projectDirectory;
+                InputStream inputStream;
+                if((projectDirectory = new File(file.getPath())).isDirectory()){
+                    inputStream = new Compositor().loadCompositeProject(projectDirectory);
+                } else {
+                    UrlWsdlLoader loader = new UrlWsdlLoader(file.toString(), this);
+                    loader.setUseWorker(false);
+                    inputStream = loader.load();
                 }
-            }
+                loadProjectFromInputStream(inputStream);
+                log.info("Loaded project from [" + file.toString() + "]");
+            } catch (Exception e) {
+                if (e instanceof XmlException) {
+                    XmlException xe = (XmlException) e;
+                    XmlError error = xe.getError();
+                    if (error != null) {
+                        System.err.println("Error at line " + error.getLine() + ", column " + error.getColumn());
+                    }
+                }
 
-            if (e instanceof RestConversionException) {
-                log.error("Project file needs to be updated manually, please reload the project.");
+                if (e instanceof RestConversionException) {
+                    log.error("Project file needs to be updated manually, please reload the project.");
+                    throw new SoapUIException("Failed to load project from file [" + file.toString() + "]", e);
+                }
+
+                e.printStackTrace();
                 throw new SoapUIException("Failed to load project from file [" + file.toString() + "]", e);
+            } finally {
+                UISupport.resetCursor();
             }
 
-            e.printStackTrace();
-            throw new SoapUIException("Failed to load project from file [" + file.toString() + "]", e);
-        } finally {
-            UISupport.resetCursor();
-        }
     }
 
     public void loadProject(InputStream inputStream) {
         UISupport.setHourglassCursor();
         try {
             loadProjectFromInputStream(inputStream);
-        } catch (XmlException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (GeneralSecurityException e) {
+        } catch (XmlException | IOException | GeneralSecurityException e) {
             e.printStackTrace();
         } finally {
             UISupport.resetCursor();
         }
     }
+
 
     public SoapuiProjectDocumentConfig loadProjectFromInputStream(InputStream inputStream) throws XmlException, IOException, GeneralSecurityException {
         projectDocument = SoapuiProjectDocumentConfig.Factory.parse(inputStream);
@@ -706,7 +704,7 @@ public class WsdlProject extends AbstractTestPropertyHolderWsdlModelItem<Project
             }
 
             while (projectFile == null
-                    || (projectFile.exists() && !UISupport.confirm("File [" + projectFile.getName() + "] exists, overwrite?",
+                    || (projectFile.exists() && !projectFile.isDirectory() && !UISupport.confirm("File [" + projectFile.getName() + "] exists, overwrite?",
                     "Overwrite File?"))) {
 
                 projectFile = UISupport.getFileDialogs().saveAs(this, "Save project " + getName(), XML_EXTENSION, XML_FILE_TYPE,
@@ -772,7 +770,7 @@ public class WsdlProject extends AbstractTestPropertyHolderWsdlModelItem<Project
     }
 
     protected boolean projectFileModified(File projectFile) {
-        return projectFile.exists() && lastModified != 0 && lastModified < projectFile.lastModified();
+        return projectFile.exists() && !projectFile.isDirectory() && lastModified != 0 && lastModified < projectFile.lastModified();
     }
 
     private boolean hasBeenSavedBefore() {
@@ -790,15 +788,15 @@ public class WsdlProject extends AbstractTestPropertyHolderWsdlModelItem<Project
         return saveIn(backupFile);
     }
 
-    public SaveStatus saveIn(File projectFile) throws IOException {
-        long size;
 
+
+    public SaveStatus saveIn(File projectFile) throws IOException {
+        long size = 0;
         beforeSave();
         // work with copy because we do not want to change working project while
         // working with it
         // if user choose save project, save all etc.
         SoapuiProjectDocumentConfig projectDocument = (SoapuiProjectDocumentConfig) this.projectDocument.copy();
-
         // check for caching
         if (!getSettings().getBoolean(WsdlSettings.CACHE_WSDLS)) {
             // no caching -> create copy and remove definition cachings
@@ -819,34 +817,40 @@ public class WsdlProject extends AbstractTestPropertyHolderWsdlModelItem<Project
 
         projectDocument.getSoapuiProject().setSoapuiVersion(SoapUI.SOAPUI_VERSION);
 
-        try {
-            File tempFile = File.createTempFile("project-temp-", XML_EXTENSION, projectFile.getParentFile());
+        if(projectFile.isDirectory()){ // composite files
+            Decompositor decompositor = new Decompositor();
+            decompositor.saveComposite(projectDocument, projectFile);
+        } else {
+            try {
+                File tempFile = File.createTempFile("project-temp-", XML_EXTENSION, projectFile.getParentFile());
 
-            // save once to make sure it can be saved
-            FileOutputStream tempOut = new FileOutputStream(tempFile);
-            projectDocument.save(tempOut, options);
-            tempOut.close();
+                // save once to make sure it can be saved
+                FileOutputStream tempOut = new FileOutputStream(tempFile);
+                projectDocument.save(tempOut, options);
+                tempOut.close();
 
-            if (getSettings().getBoolean(UISettings.LINEBREAK)) {
-                normalizeLineBreak(projectFile, tempFile);
-            } else {
-                // now save it for real
-                FileOutputStream projectOut = new FileOutputStream(projectFile);
-                projectDocument.save(projectOut, options);
-                projectOut.close();
+                if (getSettings().getBoolean(UISettings.LINEBREAK)) {
+                    normalizeLineBreak(projectFile, tempFile);
+                } else {
+                    // now save it for real
+                    FileOutputStream projectOut = new FileOutputStream(projectFile);
+                    projectDocument.save(projectOut, options);
+                    projectOut.close();
+                }
+
+                // delete tempFile here so we have it as backup in case second save fails
+                if (!tempFile.delete()) {
+                    SoapUI.getErrorLog().warn("Failed to delete temporary project file; " + tempFile.getAbsolutePath());
+                    tempFile.deleteOnExit();
+                }
+
+                size = projectFile.length();
+            } catch (Throwable t) {
+                SoapUI.logError(t);
+                UISupport.showErrorMessage("Failed to save project [" + getName() + "]: " + t.toString());
+                return SaveStatus.FAILED;
             }
 
-            // delete tempFile here so we have it as backup in case second save fails
-            if (!tempFile.delete()) {
-                SoapUI.getErrorLog().warn("Failed to delete temporary project file; " + tempFile.getAbsolutePath());
-                tempFile.deleteOnExit();
-            }
-
-            size = projectFile.length();
-        } catch (Throwable t) {
-            SoapUI.logError(t);
-            UISupport.showErrorMessage("Failed to save project [" + getName() + "]: " + t.toString());
-            return SaveStatus.FAILED;
         }
 
         lastModified = projectFile.lastModified();

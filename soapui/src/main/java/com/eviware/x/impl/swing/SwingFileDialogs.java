@@ -60,7 +60,7 @@ public class SwingFileDialogs implements XFileDialogs {
 
     public File saveAs(Object action, String title, String extension, String fileType, File defaultFile) {
         JFileChooser chooser = getChooser(action);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         chooser.setDialogTitle(title);
         chooser.setAcceptAllFileFilterUsed(true);
 
@@ -89,7 +89,7 @@ public class SwingFileDialogs implements XFileDialogs {
 
     public static File openFile(Object action, String title, String extension, String fileType, String current) {
         JFileChooser chooser = getChooser(action);
-        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         chooser.setDialogTitle(title);
         chooser.setAcceptAllFileFilterUsed(true);
         if (current != null) {

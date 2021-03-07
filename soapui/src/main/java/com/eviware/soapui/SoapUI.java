@@ -1313,7 +1313,7 @@ public class SoapUI {
         }
     }
 
-    private class ApplyProxyButtonAction extends AbstractAction {
+    private static class ApplyProxyButtonAction extends AbstractAction {
 
         public ApplyProxyButtonAction() {
             putValue(Action.NAME, "Proxy");
@@ -1385,7 +1385,7 @@ public class SoapUI {
         }
     }
 
-    private class SearchForumAction extends AbstractAction {
+    private static class SearchForumAction extends AbstractAction {
         public SearchForumAction() {
             super("Search Forum");
             putValue(Action.SHORT_DESCRIPTION, "Searches the Smartbear Community Forum");
@@ -1480,9 +1480,9 @@ public class SoapUI {
             UISupport.showDialog(dialog);
         }
 
-        private final class OkAction extends AbstractAction {
+        private static final class OkAction extends AbstractAction {
 
-            private JDialog dialog;
+            private final JDialog dialog;
 
             public OkAction(String name, JDialog dialog) {
                 super(name);
@@ -1510,7 +1510,7 @@ public class SoapUI {
         }
     }
 
-    private class SavePreferencesAction extends AbstractAction {
+    private static class SavePreferencesAction extends AbstractAction {
         public SavePreferencesAction() {
             super("Save Preferences");
             putValue(Action.SHORT_DESCRIPTION, "Saves all global preferences");
@@ -1587,7 +1587,7 @@ public class SoapUI {
 
     static class NewProjectActionDelegate extends AbstractAction {
         String actionId;
-        private SoapUIActions analyticAction;
+        private final SoapUIActions analyticAction;
 
         public NewProjectActionDelegate(String icon, String name, String actionId) {
             this(icon, name, actionId, null);
@@ -1642,7 +1642,7 @@ public class SoapUI {
         }
     }
 
-    private class PreferencesActionDelegate extends AbstractAction {
+    private static class PreferencesActionDelegate extends AbstractAction {
         public PreferencesActionDelegate() {
             putValue(Action.SMALL_ICON, UISupport.createImageIcon("/preferences_toolbar_icon.png"));
             putValue(Action.SHORT_DESCRIPTION, "Sets Global SoapUI Preferences");

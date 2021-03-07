@@ -1,4 +1,4 @@
-this fork branch adds in co;posite saving of loading of soap-ui projects in the free version (i.e. the whole project is spread over multiple files in a directory instead of 1 single xml)
+this fork branch adds in composite saving and loading of soap-ui projects in the free version (i.e. the whole project is spread over multiple files in a directory instead of 1 single xml)
 
 <p align="center">
 	<a href="https://soapui.org/">

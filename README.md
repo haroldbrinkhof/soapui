@@ -1,3 +1,6 @@
+Forked SoapUI repo to built-in my own 'composite project' support in the free version. (composite_save branch)
+
+
 <p align="center">
 	<a href="https://soapui.org/">
 	  <img src="SoapUI-oss-logo.png">
